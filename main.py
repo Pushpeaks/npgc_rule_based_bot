@@ -8,6 +8,7 @@ from database import Database
 from nlp_engine import NLPEngine
 import requests
 import traceback
+import random
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -94,35 +95,62 @@ async def chat(request: Request):
         f"\n\nContext:\n{context}"
     )
 
-    GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-    try:
-        response = requests.post(
-            "https://api.groq.com/openai/v1/chat/completions",
-            headers={"Authorization": f"Bearer {GROQ_API_KEY}", "Content-Type": "application/json"},
-            json={
-                "model": "llama-3.3-70b-versatile",
-                "messages": [
-                    {"role": "system", "content": system_prompt},
-                    *[{"role": m["role"], "content": m["content"]} for m in history],
-                    {"role": "user", "content": query}
-                ],
-                "temperature": 0.5,
-                "max_tokens": 500
-            },
-            timeout=10
-        )
-        response.raise_for_status()
-        response_text = response.json()["choices"][0]["message"]["content"]
-        
+    # Load multiple keys for rotation
+    GROQ_KEYS_RAW = os.getenv("GROQ_API_KEYS", os.getenv("GROQ_API_KEY", ""))
+    GROQ_KEYS = [k.strip() for k in GROQ_KEYS_RAW.split(",") if k.strip()]
+    
+    if not GROQ_KEYS:
+         print("!!! CRITICAL: No GROQ_API_KEY found in environment variables!")
+         return {"response": "System configuration error. Please check API keys.", "recommendations": []}
+
+    # Try keys in random order to distribute load
+    available_keys = list(GROQ_KEYS)
+    random.shuffle(available_keys)
+    
+    response_text = None
+    last_error = ""
+
+    for attempt_key in available_keys:
+        try:
+            response = requests.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                headers={"Authorization": f"Bearer {attempt_key}", "Content-Type": "application/json"},
+                json={
+                    "model": "llama-3.3-70b-versatile",
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        *[{"role": m["role"], "content": m["content"]} for m in history],
+                        {"role": "user", "content": query}
+                    ],
+                    "temperature": 0.5,
+                    "max_tokens": 500
+                },
+                timeout=10
+            )
+            
+            if response.status_code == 429:
+                print(f"!!! Rate limit hit for key: {attempt_key[:10]}... Switching to next key.")
+                last_error = "Rate limit (429)"
+                continue # Try the next key
+                
+            response.raise_for_status()
+            response_text = response.json()["choices"][0]["message"]["content"]
+            break # Success! Exit the retry loop
+            
+        except Exception as e:
+            print(f"!!! Error using key {attempt_key[:10]}...: {str(e)}")
+            last_error = str(e)
+            continue # Try next key if any
+
+    if response_text:
         chat_history[session_id].append({"role": "user", "content": query})
         chat_history[session_id].append({"role": "assistant", "content": response_text})
         
         print(f"Query: {query} | Detected: {result.get('detected_lang')}")
         return {"response": response_text, "recommendations": recommendations, "detected_lang": result.get("detected_lang")}
-        
-    except Exception as e:
-        print(f"!!! ERROR in /chat: {str(e)}")
-        traceback.print_exc()
+    else:
+        # ALL KEYS FAILED - Fallback to Database context
+        print(f"!!! ALL {len(available_keys)} KEYS FAILED. Last error: {last_error}")
         
         if context and len(context.strip()) > 5:
             fallback_prefix = {
