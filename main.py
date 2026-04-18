@@ -122,8 +122,8 @@ async def chat(request: Request):
 async def suggestions():
     return {"suggestions": nlp.get_autosuggest_list() if nlp else []}
 
-# THE FINAL FIX: Mount everything to root so CSS/JS load from ANY path
-app.mount("/", StaticFiles(directory="./", html=True), name="static")
+# THE FINAL FIX: Mount everything from the 'static' folder to the root
+app.mount("/", StaticFiles(directory="static", html=True), name="static")
 
 if __name__ == "__main__":
     import uvicorn
