@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from database import Database
 from nlp_engine import NLPEngine
 import requests
+import traceback
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -107,16 +108,32 @@ async def chat(request: Request):
                 ],
                 "temperature": 0.5,
                 "max_tokens": 500
-            }
+            },
+            timeout=10
         )
+        response.raise_for_status()
         response_text = response.json()["choices"][0]["message"]["content"]
+        
         chat_history[session_id].append({"role": "user", "content": query})
         chat_history[session_id].append({"role": "assistant", "content": response_text})
         
         print(f"Query: {query} | Detected: {result.get('detected_lang')}")
         return {"response": response_text, "recommendations": recommendations, "detected_lang": result.get("detected_lang")}
+        
     except Exception as e:
-        return {"response": "Connecting to server...", "recommendations": []}
+        print(f"!!! ERROR in /chat: {str(e)}")
+        traceback.print_exc()
+        
+        if context and len(context.strip()) > 5:
+            fallback_prefix = {
+                "en": "I'm having trouble connecting to my AI brain, but here's the data from our records:\n\n",
+                "hi": "मेरे AI सर्वर में समस्या है, लेकिन कॉलेज रिकॉर्ड्स से जानकारी यहाँ है:\n\n",
+                "hinglish": "AI server me thodi dikkat hai, par college records se ye info mili hai:\n\n"
+            }
+            msg = fallback_prefix.get(lang, fallback_prefix['en']) + context
+            return {"response": msg, "recommendations": recommendations, "detected_lang": result.get("detected_lang")}
+
+        return {"response": "Connecting to server... (Low memory or API limit reached)", "recommendations": []}
 
 @app.get("/suggestions")
 async def suggestions():
