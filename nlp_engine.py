@@ -1,7 +1,5 @@
 import re
-import numpy as np
 from thefuzz import process, fuzz
-from sentence_transformers import SentenceTransformer
 
 class NLPEngine:
     def __init__(self, courses=None, faqs=None, knowledge=None, faculty=None):
