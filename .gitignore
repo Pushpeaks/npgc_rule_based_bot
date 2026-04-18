@@ -4,7 +4,6 @@ __pycache__/
 venv/
 .devcontainer/
 .vscode/
-isrgrootx1.pem
 test_cloud_connection.py
 test_cloud_pymysql.py
 verify_app_cloud.py

@@ -9,6 +9,11 @@ load_dotenv()
 USE_CLOUD = os.getenv("TIDB_HOST") is not None
 
 if USE_CLOUD:
+    ca_path = os.getenv("TIDB_CA_PATH")
+    if not os.path.exists(ca_path):
+        print(f"CRITICAL ERROR: Database certificate file '{ca_path}' NOT FOUND!")
+        print("Please ensure the .pem file is pushed to GitHub or uploaded to the server.")
+    
     import ssl
     ctx = ssl.create_default_context(cafile=os.getenv("TIDB_CA_PATH"))
     ctx.check_hostname = False
