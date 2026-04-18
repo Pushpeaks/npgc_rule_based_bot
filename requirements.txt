@@ -3,7 +3,6 @@ uvicorn
 aiomysql
 pymysql
 thefuzz
-sentence-transformers
 numpy
 requests
 python-dotenv

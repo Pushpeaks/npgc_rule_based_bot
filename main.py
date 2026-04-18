@@ -38,29 +38,27 @@ async def startup():
     
     # 1. Load Courses with RICH CONTEXT (JOINs)
     courses_raw = await Database.fetch_all("""
-        SELECT c.course, c.duration, c.seats, c.eligibility, ct.type, d.deptName, c.embedding 
+        SELECT c.course, c.duration, c.seats, c.eligibility, ct.type, d.deptName
         FROM course c
         LEFT JOIN coursetype ct ON c.courseTypeId = ct.id
         LEFT JOIN department d ON c.deptId = d.deptId
-        WHERE c.embedding IS NOT NULL
     """)
     
     # 2. Load Faculty with RICH CONTEXT (JOIN)
     faculty_raw = await Database.fetch_all("""
-        SELECT f.name, f.designation, f.qualification, d.deptName, f.embedding 
+        SELECT f.name, f.designation, f.qualification, d.deptName
         FROM faculty f
         LEFT JOIN department d ON f.deptId = d.deptId
-        WHERE f.embedding IS NOT NULL
     """)
     
-    faqs_raw = await Database.fetch_all("SELECT question, answer, embedding FROM faqs WHERE embedding IS NOT NULL")
-    knowledge_raw = await Database.fetch_all("SELECT Keywords, FixedResponseEn, Intent, embedding FROM chatbotknowledge WHERE embedding IS NOT NULL")
+    faqs_raw = await Database.fetch_all("SELECT question, answer FROM faqs")
+    knowledge_raw = await Database.fetch_all("SELECT Keywords, FixedResponseEn, Intent FROM chatbotknowledge")
     
-    # Build context strings for RAG
-    courses = [{"text": f"Course: {c['course']}, Type: {c['type']}, Department: {c['deptName']}, Duration: {c['duration']}, Seats: {c['seats']}, Eligibility: {c['eligibility']}", "embedding": json.loads(c['embedding'])} for c in courses_raw]
-    faqs = [{"text": f"Q: {f['question']} A: {f['answer']}", "embedding": json.loads(f['embedding'])} for f in faqs_raw]
-    knowledge = [{"text": f"Topic: {k['Intent']} ({k['Keywords']}), Information: {k['FixedResponseEn']}", "embedding": json.loads(k['embedding'])} for k in knowledge_raw]
-    faculty = [{"text": f"Faculty Name: {fac['name']}, Department: {fac['deptName']}, Designation: {fac['designation']}, Qualification: {fac['qualification']}", "embedding": json.loads(fac['embedding'])} for fac in faculty_raw]
+    # Build context strings for RAG (Lean version)
+    courses = [{"text": f"Course: {c['course']}, Type: {c['type']}, Department: {c['deptName']}, Duration: {c['duration']}, Seats: {c['seats']}, Eligibility: {c['eligibility']}"} for c in courses_raw]
+    faqs = [{"text": f"Q: {f['question']} A: {f['answer']}"} for f in faqs_raw]
+    knowledge = [{"text": f"Topic: {k['Intent']} ({k['Keywords']}), Information: {k['FixedResponseEn']}"} for k in knowledge_raw]
+    faculty = [{"text": f"Faculty Name: {fac['name']}, Department: {fac['deptName']}, Designation: {fac['designation']}, Qualification: {fac['qualification']}"} for fac in faculty_raw]
     
     nlp = NLPEngine(courses=courses, faqs=faqs, knowledge=knowledge, faculty=faculty)
     print("Class of 2026 Engine Loaded with RICH Deep Context!")

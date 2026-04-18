@@ -10,8 +10,8 @@ class NLPEngine:
         self.knowledge_corpus = knowledge or []
         self.faculty_corpus = faculty or []
         
-        print("Initializing NLP Engine with Semantic Model...")
-        self.model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
+        print("Initializing Lightweight Fuzzy Engine...")
+        # No heavy model initialization anymore
         
         self.intents = {
             "FEES": ["fee", "fees", "cost", "price", "paisa", "rupaye", "shulk", "फीस", "शुल्क"],
@@ -25,43 +25,30 @@ class NLPEngine:
         }
 
     def detect_language(self, text):
-        # 1. Hindi (Devanagari)
-        if re.search(r'[\u0900-\u097F]', text):
-            return "hi"
-        
-        # 2. Hinglish (Romanized Hindi)
+        if re.search(r'[\u0900-\u097F]', text): return "hi"
         text_lower = text.lower()
         hinglish_keywords = ["hai", "kya", "kar", "ho", "me", "se", "ka", "ki", "ke", "kab", "kon", "raha", "rahi", "paisa", "rupay", "shulk"]
-        
-        # Simple word-based check
         words = re.findall(r'\w+', text_lower)
         hits = sum(1 for w in words if w in hinglish_keywords)
-        
-        if hits >= 1:
-            return "hinglish"
-            
-        return "en"
+        return "hinglish" if hits >= 1 else "en"
 
     def clean_text(self, text):
         return text.lower().strip()
 
-    def get_semantic_matches(self, query_vector, corpus, top_k=5):
+    def get_fuzzy_matches(self, query, corpus, top_k=5):
         if not corpus: return []
-        scores = []
+        scored_corpus = []
         for item in corpus:
-            if item.get('embedding'):
-                target_vec = np.array(item['embedding'])
-                sim = np.dot(query_vector, target_vec)
-                scores.append((float(sim), item))
-        scores.sort(key=lambda x: x[0], reverse=True)
-        return scores[:top_k]
+            # We compare the query to the item's text content
+            score = fuzz.token_set_ratio(query, item['text'])
+            scored_corpus.append((score / 100.0, item)) # Normalize to 0-1
+        
+        scored_corpus.sort(key=lambda x: x[0], reverse=True)
+        return scored_corpus[:top_k]
 
     def is_gibberish(self, text):
         if len(text) < 3: return True
-        # Allow Devanagari (Hindi) characters: \u0900-\u097F
-        if re.search(r'[\u0900-\u097F]', text):
-            return False
-            
+        if re.search(r'[\u0900-\u097F]', text): return False
         vowels = 'aeiouAEIOU'
         vcount = sum(1 for char in text if char in vowels)
         if len(text) > 8 and vcount < 1: return True
@@ -73,19 +60,19 @@ class NLPEngine:
         if self.is_gibberish(cleaned_query):
             return {"is_gibberish": True}
 
-        query_vector = self.model.encode(cleaned_query)
-        
+        # Intent detection
         intent = "UNKNOWN"
         for i_name, keywords in self.intents.items():
             if any(kw in cleaned_query for kw in keywords):
                 intent = i_name
                 break
         
+        # Fuzzy search instead of semantic dot-product
         matches = {
-            "courses": self.get_semantic_matches(query_vector, self.course_corpus),
-            "faqs": self.get_semantic_matches(query_vector, self.faq_corpus),
-            "knowledge": self.get_semantic_matches(query_vector, self.knowledge_corpus),
-            "faculty": self.get_semantic_matches(query_vector, self.faculty_corpus)
+            "courses": self.get_fuzzy_matches(cleaned_query, self.course_corpus),
+            "faqs": self.get_fuzzy_matches(cleaned_query, self.faq_corpus),
+            "knowledge": self.get_fuzzy_matches(cleaned_query, self.knowledge_corpus),
+            "faculty": self.get_fuzzy_matches(cleaned_query, self.faculty_corpus)
         }
         
         all_matches = matches["courses"] + matches["faqs"] + matches["knowledge"] + matches["faculty"]
@@ -101,25 +88,21 @@ class NLPEngine:
             "PLACEMENT": ["BCA Placement", "B.Com Placement", "Placement Records"]
         }
         
-        # Top 3 for context
+        # Context gathering
         for score, item in all_matches[:3]:
-            if score > 0.35:
+            if score > 0.45: # Adjusted threshold for fuzzy matching
                 context_items.append(item['text'])
         
-        # 4. Smart Recommendations & Backfill
+        # Recommendations logic (stays same but uses fuzzy scores)
         for score, item in all_matches[3:10]: 
-            if score > 0.2:
-                text = item['text']
-                if "Q: " in text: text = text.split(" A:")[0].replace("Q: ", "")
-                elif "Course: " in text: text = text.split(",")[0].replace("Course: ", "") + " Details"
-                elif "Topic: " in text: 
-                    text = text.split(" (")[0].replace("Topic: ", "")
-                    # Humanize technical intents (e.g., ADMISSION_SEATS -> Admission Seats)
-                    text = text.replace("_", " ").title()
-                elif "Faculty Name: " in text: 
-                    text = text.split(",")[0].replace("Faculty Name: ", "")
+            if score > 0.35:
+                res_text = item['text']
+                if "Q: " in res_text: res_text = res_text.split(" A:")[0].replace("Q: ", "")
+                elif "Course: " in res_text: res_text = res_text.split(",")[0].replace("Course: ", "") + " Details"
+                elif "Topic: " in res_text: res_text = res_text.split(" (")[0].replace("Topic: ", "").replace("_", " ").title()
+                elif "Faculty Name: " in res_text: res_text = res_text.split(",")[0].replace("Faculty Name: ", "")
                 
-                if text not in recommendations: recommendations.append(text)
+                if res_text not in recommendations: recommendations.append(res_text)
         
         if len(recommendations) < 3:
             backfills = intent_fallbacks.get(intent, ["Course List", "Admission 2026 Latest", "Hostel Info"])
