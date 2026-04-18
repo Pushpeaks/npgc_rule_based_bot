@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NPGC Smart Assistant</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div id="chat-container">
+        <!-- Header -->
+        <div class="chat-header">
+            <div class="header-info">
+                <img src="clg_logo.png" alt="NPGC Logo" id="bot-logo" onerror="this.src='https://via.placeholder.com/40'">
+                <div>
+                    <h1>NPGC Assistant</h1>
+                    <span class="status"><i class="fas fa-circle"></i> Online</span>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button id="toggle-voice" title="Turn on Voice Assistance"><i class="fas fa-volume-mute"></i></button>
+                <button id="clear-chat" title="Clear Chat History"><i class="fas fa-trash-alt"></i></button>
+                <select id="lang-select" onchange="changeLanguage()">
+                    <option value="en">English</option>
+                    <option value="hi">हिंदी</option>
+                    <option value="hinglish">Hinglish</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Chat Body -->
+        <div id="chat-body">
+            <div class="message bot-message animated fadeIn">
+                <div class="message-content">
+                    <p id="welcome-text">Hello! I am your NPGC Assistant. How can I help you today?</p>
+                </div>
+                <span class="message-time">Just now</span>
+            </div>
+            
+            <div class="suggestions-container" id="suggestions">
+                <!-- Suggestions will be dynamic -->
+            </div>
+        </div>
+
+        <!-- Chat Input -->
+        <div class="chat-footer">
+            <div id="autocomplete-results" class="autocomplete-box"></div>
+            <div class="input-wrapper">
+                <button id="mic-btn" title="Speak your query"><i class="fas fa-microphone"></i></button>
+                <input type="text" id="user-input" placeholder="Type your message..." autocomplete="off">
+                <button id="send-btn"><i class="fas fa-paper-plane"></i></button>
+            </div>
+            <p class="footer-credit">Developed by <b>Pushpesh Srivastava, Krishna Agarwal, Akshat Sharma & Aditi Srivastava</b> (BCA Class of 2026)</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

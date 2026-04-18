@@ -1,0 +1,16 @@
+.env
+__pycache__/
+*.pyc
+venv/
+.devcontainer/
+.vscode/
+isrgrootx1.pem
+test_cloud_connection.py
+test_cloud_pymysql.py
+verify_app_cloud.py
+cloud_migration.py
+migrate_to_cloud.py
+setup_db.py
+vectorizer.py
+*.log
+scratch/
