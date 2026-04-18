@@ -20,15 +20,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 1. Mount Static Files (CSS, JS, Images)
-app.mount("/static", StaticFiles(directory="./"), name="static")
-
-# 2. Serve index.html at root
-@app.get("/")
-async def get_index():
-    return FileResponse("index.html")
-
-nlp = None
 chat_history = {}
 
 @app.on_event("startup")
@@ -130,6 +121,9 @@ async def chat(request: Request):
 @app.get("/suggestions")
 async def suggestions():
     return {"suggestions": nlp.get_autosuggest_list() if nlp else []}
+
+# THE FINAL FIX: Mount everything to root so CSS/JS load from ANY path
+app.mount("/", StaticFiles(directory="./", html=True), name="static")
 
 if __name__ == "__main__":
     import uvicorn
