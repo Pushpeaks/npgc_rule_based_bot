@@ -129,18 +129,21 @@ document.addEventListener('click', (e) => {
 
 function formatMessage(text) {
     if (!text) return "";
-    let html = text;
+    let html = text.trim();
     
-    // 1. Headers (### Heading)
-    html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+    // 1. Headers (### Heading) - Handles leading spaces
+    html = html.replace(/^\s*###\s+(.+)$/gm, '<h3>$1</h3>');
     
-    // 2. Bold (**text**)
-    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    // 2. Bold (**text**) - Non-greedy match
+    html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
     
-    // 3. Bullets (* or + or -)
-    html = html.replace(/^[\*\+\-] (.*$)/gim, '• $1');
+    // 3. Bullets (* or + or -) - Handles leading spaces
+    html = html.replace(/^\s*[\*\+\-]\s+(.+)$/gm, '<div class="bullet-item">• $1</div>');
     
-    // 4. Line breaks
+    // 4. Cleanup lone stars that might remain
+    html = html.replace(/^\s*\*\s+/gm, '• ');
+    
+    // 5. Line breaks
     html = html.replace(/\n/g, '<br>');
     
     return html;
