@@ -59,6 +59,10 @@ async def load_nlp_engine():
 async def startup():
     await load_nlp_engine()
 
+@app.get("/health")
+async def health():
+    return {"status": "ok", "message": "NPGC Assistant is running"}
+
 @app.get("/refresh")
 async def refresh():
     try:

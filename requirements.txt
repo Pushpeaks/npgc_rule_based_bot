@@ -3,7 +3,6 @@ uvicorn
 aiomysql
 pymysql
 thefuzz
-numpy
 requests
 python-dotenv
 cryptography
