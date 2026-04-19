@@ -25,10 +25,12 @@ class NLPEngine:
     def detect_language(self, text):
         if re.search(r'[\u0900-\u097F]', text): return "hi"
         text_lower = text.lower()
-        hinglish_keywords = ["hai", "kya", "kar", "ho", "me", "se", "ka", "ki", "ke", "kab", "kon", "raha", "rahi", "paisa", "rupay", "shulk"]
+        # Removed 'me' and other common English substrings to prevent false detection
+        hinglish_keywords = ["hai", "kya", "kar", "ho", "se", "ka", "ki", "ke", "kab", "kon", "raha", "rahi", "paisa", "rupay", "shulk"]
         words = re.findall(r'\w+', text_lower)
         hits = sum(1 for w in words if w in hinglish_keywords)
-        return "hinglish" if hits >= 1 else "en"
+        # Require multiple hits or a certain ratio to switch to Hinglish
+        return "hinglish" if (hits >= 2 or (hits == 1 and len(words) < 5)) else "en"
 
     def clean_text(self, text):
         return text.lower().strip()
