@@ -69,10 +69,12 @@ class NLPEngine:
         
         # Fuzzy search instead of semantic dot-product
         matches = {
-            "courses": self.get_fuzzy_matches(cleaned_query, self.course_corpus),
-            "faqs": self.get_fuzzy_matches(cleaned_query, self.faq_corpus),
-            "knowledge": self.get_fuzzy_matches(cleaned_query, self.knowledge_corpus),
-            "faculty": self.get_fuzzy_matches(cleaned_query, self.faculty_corpus)
+        # Labeled context gathering
+        matches = {
+            "courses": self.get_fuzzy_matches(cleaned_query, self.course_corpus, top_k=15),
+            "faqs": self.get_fuzzy_matches(cleaned_query, self.faq_corpus, top_k=10),
+            "knowledge": self.get_fuzzy_matches(cleaned_query, self.knowledge_corpus, top_k=10),
+            "faculty": self.get_fuzzy_matches(cleaned_query, self.faculty_corpus, top_k=15)
         }
         
         all_matches = matches["courses"] + matches["faqs"] + matches["knowledge"] + matches["faculty"]
@@ -88,10 +90,16 @@ class NLPEngine:
             "PLACEMENT": ["BCA Placement", "B.Com Placement", "Placement Records"]
         }
         
-        # Context gathering
-        for score, item in all_matches[:3]:
-            if score > 0.45: # Adjusted threshold for fuzzy matching
-                context_items.append(item['text'])
+        # Get top 20 relevant items for intelligence, with labeling
+        for score, item in all_matches[:20]:
+            if score > 0.35:
+                label = "[INFO]"
+                if item in [x[1] for x in matches["courses"]]: label = "[COURSE]"
+                elif item in [x[1] for x in matches["faculty"]]: label = "[FACULTY]"
+                elif item in [x[1] for x in matches["faqs"]]: label = "[FAQ]"
+                elif item in [x[1] for x in matches["knowledge"]]: label = "[KNOWLEDGE]"
+                
+                context_items.append(f"{label} {item['text']}")
         
         # Recommendations logic (stays same but uses fuzzy scores)
         for score, item in all_matches[3:10]: 
