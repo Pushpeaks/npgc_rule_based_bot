@@ -88,12 +88,13 @@ function realTimeLangDetect(text) {
 userInput.addEventListener('input', () => {
     const val = userInput.value.trim();
     
-    // Auto-detect language while typing
+    /* Auto-detect language while typing disabled for better user control
     const detected = realTimeLangDetect(val);
     if (detected && detected !== currentLang) {
         langSelect.value = detected;
         changeLanguage();
     }
+    */
 
     const valLower = val.toLowerCase();
     autocompleteBox.innerHTML = '';
@@ -208,11 +209,12 @@ async function sendMessage(text = null) {
         
         const data = await response.json();
         
-        // Auto-switch Language if detected
+        /* Auto-switch Language disabled to respect manual selection
         if (data.detected_lang && data.detected_lang !== currentLang) {
             langSelect.value = data.detected_lang;
             changeLanguage();
         }
+        */
 
         addMessage(data.response, false, data.recommendations);
     } catch (error) {

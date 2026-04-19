@@ -105,10 +105,12 @@ async def chat(request: Request):
         f"TONE: {lang_instructions.get(lang, lang_instructions['en'])} "
         "INSTRUCTIONS:\n"
         "1. DATA SYNTHESIS: Use the provided [COURSE], [FACULTY], [FAQ], and [KNOWLEDGE] data to build complete answers.\n"
-        "2. COMPREHENSIVE LISTS: If the user asks for courses or faculty, list ALL relevant items from the context. Do not truncate.\n"
-        "3. CROSS-REFERENCING: If you find a connection (e.g. asking about a department shows its HOD in faculty data), mention it.\n"
-        "4. MISSING DATA: If certain details (like exact fees for a specific course) aren't in the context, provide related info and suggest contacting support@npgc.in.\n"
-        "5. STRUCTURE: Use bullet points and clear headings for readability.\n"
+        "2. DEPARTMENT CLARITY: There is NO 'BCA Department'. BCA is a course within the 'Department of Computer Science'. Always refer to it as such.\n"
+        "3. COMPREHENSIVE LISTS: If the user asks for courses or faculty, list ALL relevant items from the context. Do not truncate.\n"
+        "4. CROSS-REFERENCING: If you find a connection (e.g. asking about a department shows its HOD in faculty data), mention it.\n"
+        "5. MISSING DATA: If certain details (like exact fees for a specific course) aren't in the context, provide related info and suggest contacting support@npgc.in.\n"
+        "6. STRUCTURE: Use bullet points and clear headings for readability.\n"
+        "7. LANGUAGE: Respect the 'TONE' instruction above. If the tone is English, do NOT include Hindi snippets unless explicitly asked.\n"
         f"\n\nContext:\n{context}"
     )
 
