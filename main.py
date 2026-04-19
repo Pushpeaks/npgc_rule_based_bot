@@ -24,8 +24,7 @@ app.add_middleware(
 
 chat_history = {}
 
-@app.on_event("startup")
-async def startup():
+async def load_nlp_engine():
     global nlp
     await Database.get_pool()
     
@@ -55,6 +54,18 @@ async def startup():
     
     nlp = NLPEngine(courses=courses, faqs=faqs, knowledge=knowledge, faculty=faculty)
     print("Class of 2026 Engine Loaded with RICH Deep Context!")
+
+@app.on_event("startup")
+async def startup():
+    await load_nlp_engine()
+
+@app.get("/refresh")
+async def refresh():
+    try:
+        await load_nlp_engine()
+        return {"status": "success", "message": "Knowledge engine refreshed successfully!"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 @app.post("/chat")
 async def chat(request: Request):
