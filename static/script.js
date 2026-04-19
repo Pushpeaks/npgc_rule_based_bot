@@ -127,6 +127,25 @@ document.addEventListener('click', (e) => {
     if (e.target !== userInput) autocompleteBox.style.display = 'none';
 });
 
+function formatMessage(text) {
+    if (!text) return "";
+    let html = text;
+    
+    // 1. Headers (### Heading)
+    html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+    
+    // 2. Bold (**text**)
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    
+    // 3. Bullets (* or + or -)
+    html = html.replace(/^[\*\+\-] (.*$)/gim, '• $1');
+    
+    // 4. Line breaks
+    html = html.replace(/\n/g, '<br>');
+    
+    return html;
+}
+
 // 3. Core Chat Logic
 function changeLanguage() {
     currentLang = langSelect.value;
@@ -170,7 +189,7 @@ function addMessage(text, isUser = false, recommendations = []) {
     
     msgDiv.innerHTML = `
         <div class="message-content">
-            <p>${text.replace(/\n/g, '<br>')}</p>
+            <p>${isUser ? text : formatMessage(text)}</p>
         </div>
         <span class="message-time">${time}</span>
     `;

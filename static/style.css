@@ -179,6 +179,22 @@ body {
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 
+.bot-message .message-content h3 {
+    color: var(--primary-red);
+    font-size: 1.05rem;
+    margin: 10px 0 5px 0;
+    font-weight: 700;
+}
+
+.bot-message .message-content strong {
+    color: var(--dark-red);
+    font-weight: 600;
+}
+
+.bot-message .message-content p {
+    margin-bottom: 5px;
+}
+
 .user-message {
     align-self: flex-end;
 }
