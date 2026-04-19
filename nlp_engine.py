@@ -67,8 +67,6 @@ class NLPEngine:
                 intent = i_name
                 break
         
-        # Fuzzy search instead of semantic dot-product
-        matches = {
         # Labeled context gathering
         matches = {
             "courses": self.get_fuzzy_matches(cleaned_query, self.course_corpus, top_k=15),
