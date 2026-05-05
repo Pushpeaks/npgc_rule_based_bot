@@ -125,6 +125,39 @@ async def chat(request: Request):
             "recommendations": ["What courses does NPGC offer?", "BCA at NPGC", "NPGC Admission 2026"]
         }
 
+    # Developer info guard — HARDCODED to always give accurate credit
+    if result.get("intent") == "DEVELOPER":
+        dev_msgs = {
+            "en": (
+                "🤖 **This chatbot was developed by the BCA 2026 batch of National PG College (NPGC), Lucknow:**\n\n"
+                "👨‍💻 **Pushpesh Srivastava**\n"
+                "👨‍💻 **Akshat Sharma**\n"
+                "👨‍💻 **Krishna Agarwal**\n"
+                "👩‍💻 **Aditi Srivastava**\n\n"
+                "_All four are students of the BCA 2026 batch at NPGC, Lucknow._"
+            ),
+            "hi": (
+                "🤖 **यह चैटबॉट National PG College (NPGC), Lucknow के BCA 2026 बैच के छात्रों द्वारा बनाया गया है:**\n\n"
+                "👨‍💻 **Pushpesh Srivastava**\n"
+                "👨‍💻 **Akshat Sharma**\n"
+                "👨‍💻 **Krishna Agarwal**\n"
+                "👩‍💻 **Aditi Srivastava**\n\n"
+                "_ये चारों NPGC Lucknow के BCA 2026 बैच के छात्र हैं।_"
+            ),
+            "hinglish": (
+                "🤖 **Yeh chatbot NPGC (National PG College, Lucknow) ke BCA 2026 batch ke students ne banaya hai:**\n\n"
+                "👨‍💻 **Pushpesh Srivastava**\n"
+                "👨‍💻 **Akshat Sharma**\n"
+                "👨‍💻 **Krishna Agarwal**\n"
+                "👩‍💻 **Aditi Srivastava**\n\n"
+                "_Ye chaaron NPGC Lucknow ke BCA 2026 batch ke students hain!_ 🎓"
+            )
+        }
+        return {
+            "response": dev_msgs.get(lang, dev_msgs["en"]),
+            "recommendations": ["What courses does NPGC offer?", "BCA at NPGC", "NPGC Admission 2026"]
+        }
+
     context = result["context"]
     recommendations = result.get("recommendations", [])
 

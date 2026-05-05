@@ -28,6 +28,15 @@ class NLPEngine:
             "BTECH_MBBS_DENIAL": ["btech", "b.tech", "b tech", "mbbs", "m.b.b.s",
                                    "engineering", "medical", "doctor degree",
                                    "इंजीनियरिंग", "मेडिकल", "डॉक्टर"],
+            # Developer / team queries
+            "DEVELOPER": ["who developed", "who made", "who built", "who created", "who designed",
+                          "developer", "developers", "team", "creator", "created by", "made by",
+                          "built by", "developed by", "kisne banaya", "kisne develop",
+                          "pushpesh", "pushpesh srivastava",
+                          "akshat", "akshat sharma",
+                          "krishna", "krishna agarwal",
+                          "aditi", "aditi srivastava",
+                          "किसने बनाया", "डेवलपर"],
             # Clearly off-topic queries — chatbot should refuse
             "OFF_TOPIC": ["cricket", "ipl", "movie", "film", "bollywood", "politics",
                           "weather", "bitcoin", "crypto", "stock market", "recipe",
@@ -42,6 +51,11 @@ class NLPEngine:
             {"text": "BCA department HOD Head of Department is Dr. Shalini Lamba. She leads the Department of Computer Science at NPGC."},
             {"text": "NPGC does NOT offer B.Tech or Bachelor of Technology. Engineering courses are not available at NPGC college."},
             {"text": "NPGC does NOT offer MBBS or any medical degree program. Medical programs are not available at NPGC."},
+            {"text": "This chatbot was developed by Pushpesh Srivastava, Akshat Sharma, Krishna Agarwal, and Aditi Srivastava — BCA 2026 batch, National PG College (NPGC), Lucknow."},
+            {"text": "Developer: Pushpesh Srivastava, BCA 2026 batch, NPGC Lucknow. Co-developer of the NPGC chatbot."},
+            {"text": "Developer: Akshat Sharma, BCA 2026 batch, NPGC Lucknow. Co-developer of the NPGC chatbot."},
+            {"text": "Developer: Krishna Agarwal, BCA 2026 batch, NPGC Lucknow. Co-developer of the NPGC chatbot."},
+            {"text": "Developer: Aditi Srivastava, BCA 2026 batch, NPGC Lucknow. Co-developer of the NPGC chatbot."},
         ]
         # Merge DB knowledge with hardcoded facts (facts appended last so they always exist)
         self.knowledge_corpus = (knowledge or []) + _npgc_facts
