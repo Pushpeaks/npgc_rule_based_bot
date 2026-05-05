@@ -86,6 +86,18 @@ async def chat(request: Request):
         msg = "I didn't quite catch that. Please type a clear question about college." if lang != "hi" else "मुझे समझ नहीं आया। कृपया कॉलेज के बारे में स्पष्ट प्रश्न पूछें।"
         return {"response": msg, "recommendations": []}
 
+    # Off-topic guard — refuse non-NPGC queries politely
+    if result.get("is_off_topic"):
+        off_topic_msgs = {
+            "en": "I'm your NPGC college assistant and can only help with college-related queries! 😊 Ask me about our courses, admissions, faculty, fees, or facilities.",
+            "hi": "मैं NPGC कॉलेज का सहायक हूँ और केवल कॉलेज संबंधी प्रश्नों में मदद कर सकता हूँ! हमारे कोर्स, प्रवेश, फैकल्टी, या सुविधाओं के बारे में पूछें।",
+            "hinglish": "Main NPGC college ka assistant hoon aur sirf college se related sawaalon mein help kar sakta hoon! 😊 Courses, admission, faculty ya fees ke baare mein poochho."
+        }
+        return {
+            "response": off_topic_msgs.get(lang, off_topic_msgs["en"]),
+            "recommendations": result.get("recommendations", [])
+        }
+
     context = result["context"]
     recommendations = result.get("recommendations", [])
 
@@ -100,18 +112,29 @@ async def chat(request: Request):
     }
     
     system_prompt = (
-        "You are the NPGC Expert Academic Advisor. Your goal is to provide comprehensive, accurate, and structured guidance. "
-        "The user sees you as highly intelligent and well-informed. "
-        f"TONE: {lang_instructions.get(lang, lang_instructions['en'])} "
-        "INSTRUCTIONS:\n"
+        "You are the official AI assistant of NPGC — National PG College, Lucknow (website: npgc.in). "
+        "Your SOLE purpose is to answer questions about National PG College, Lucknow (NPGC) — its courses, faculty, admissions, fees, departments, facilities, and related topics. "
+        "\n\n"
+        "=== STRICT SCOPE RULE ===\n"
+        "If the user asks anything NOT related to NPGC college (e.g. general knowledge, other colleges, politics, movies, coding help, etc.), "
+        "you MUST politely refuse and redirect them. Say something like: "
+        "'I can only help with NPGC college-related queries. Please ask me about our courses, admissions, faculty, or facilities!' "
+        "Do NOT answer off-topic questions under any circumstance.\n\n"
+        "=== VERIFIED NPGC FACTS (Always use these — they override any other source) ===\n"
+        "1. BCA (Bachelor of Computer Applications) has a total intake of 120 seats.\n"
+        "2. The HOD (Head of Department) of BCA / Department of Computer Science is Dr. Shalini Lamba.\n"
+        "3. NPGC does NOT offer B.Tech (Bachelor of Technology). If asked, clearly state this.\n"
+        "4. NPGC does NOT offer MBBS or any medical degree programs. If asked, clearly state this.\n\n"
+        "=== INSTRUCTIONS ===\n"
+        f"TONE: {lang_instructions.get(lang, lang_instructions['en'])}\n"
         "1. DATA SYNTHESIS: Use the provided [COURSE], [FACULTY], [FAQ], and [KNOWLEDGE] data to build complete answers.\n"
-        "2. DEPARTMENT CLARITY: There is NO 'BCA Department'. BCA is a course within the 'Department of Computer Science'. Always refer to it as such.\n"
+        "2. DEPARTMENT CLARITY: There is NO standalone 'BCA Department'. BCA is a course within the 'Department of Computer Science'. Always refer to it as such.\n"
         "3. COMPREHENSIVE LISTS: If the user asks for courses or faculty, list ALL relevant items from the context. Do not truncate.\n"
-        "4. CROSS-REFERENCING: If you find a connection (e.g. asking about a department shows its HOD in faculty data), mention it.\n"
-        "5. MISSING DATA: If certain details (like exact fees for a specific course) aren't in the context, provide related info and suggest contacting support@npgc.in.\n"
+        "4. CROSS-REFERENCING: If you find a connection (e.g. asking about a department shows its HOD in faculty data), mention it proactively.\n"
+        "5. MISSING DATA: If certain details (like exact fees) aren't in the context, provide related info and suggest contacting support@npgc.in.\n"
         "6. STRUCTURE: Use bullet points and clear headings for readability.\n"
         "7. LANGUAGE: Respect the 'TONE' instruction above. If the tone is English, do NOT include Hindi snippets unless explicitly asked.\n"
-        f"\n\nContext:\n{context}"
+        f"\n\nContext from Database:\n{context}"
     )
 
     # Load multiple keys for rotation

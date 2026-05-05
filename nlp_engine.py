@@ -5,22 +5,46 @@ class NLPEngine:
     def __init__(self, courses=None, faqs=None, knowledge=None, faculty=None):
         self.course_corpus = courses or []
         self.faq_corpus = faqs or []
-        self.knowledge_corpus = knowledge or []
         self.faculty_corpus = faculty or []
-        
+
         print("Initializing Lightweight Fuzzy Engine...")
-        # No heavy model initialization anymore
-        
+
         self.intents = {
             "FEES": ["fee", "fees", "cost", "price", "paisa", "rupaye", "shulk", "फीस", "शुल्क"],
             "DURATION": ["duration", "time", "period", "years", "saal", "waqt", "समय", "अवधि"],
             "ELIGIBILITY": ["eligibility", "qualification", "criteria", "apply", "yogya", "योग्यता", "पात्रता"],
-            "FACULTY": ["faculty", "teacher", "professor", "hod", "staff", "mam", "sir", "dr", "शिक्षक", "प्राध्यापक", "संकाय", "सदस्य", "संकाय सदस्य", "प्रोफेसर"],
+            "FACULTY": ["faculty", "teacher", "professor", "hod", "staff", "mam", "sir", "dr",
+                        "shalini", "lamba", "shalini lamba",
+                        "शिक्षक", "प्राध्यापक", "संकाय", "सदस्य", "प्रोफेसर"],
             "ADMISSION": ["admission", "apply", "deadline", "date", "form", "प्रवेश", "दाखिला"],
             "GREETING": ["hi", "hello", "hey", "namaste", "pranam", "नमस्ते", "हेलो"],
-            "CERTIFICATION": ["certification", "certificate", "diploma", "vocational", "सर्टिफिकेशन", "प्रमाणपत्र", "डिप्लोमा"],
-            "AVAILABLE": ["available", "list", "show", "tell", "kya hai", "kon se", "उपलब्ध", "कौन से", "बताएं", "पाठ्यक्रम", "कोर्स", "सीट", "सीटें"]
+            "CERTIFICATION": ["certification", "certificate", "diploma", "vocational",
+                              "सर्टिफिकेशन", "प्रमाणपत्र", "डिप्लोमा"],
+            "AVAILABLE": ["available", "list", "show", "tell", "kya hai", "kon se",
+                          "उपलब्ध", "कौन से", "बताएं", "पाठ्यक्रम", "कोर्स", "सीट", "सीटें"],
+            "SEATS": ["seats", "seat", "intake", "capacity", "kitni seats", "120",
+                      "सीट", "सीटें", "क्षमता"],
+            # These courses are NOT offered — detect and deny clearly
+            "BTECH_MBBS_DENIAL": ["btech", "b.tech", "b tech", "mbbs", "m.b.b.s",
+                                   "engineering", "medical", "doctor degree",
+                                   "इंजीनियरिंग", "मेडिकल", "डॉक्टर"],
+            # Clearly off-topic queries — chatbot should refuse
+            "OFF_TOPIC": ["cricket", "ipl", "movie", "film", "bollywood", "politics",
+                          "weather", "bitcoin", "crypto", "stock market", "recipe",
+                          "cook", "game", "gaming", "news", "whatsapp", "instagram",
+                          "python tutorial", "javascript help", "chatgpt", "openai",
+                          "who is the president", "capital of", "history of india"]
         }
+
+        # Hardcoded verified NPGC facts — always injected into knowledge corpus
+        _npgc_facts = [
+            {"text": "BCA (Bachelor of Computer Applications) total seats intake: 120 seats. NPGC BCA capacity is 120."},
+            {"text": "BCA department HOD Head of Department is Dr. Shalini Lamba. She leads the Department of Computer Science at NPGC."},
+            {"text": "NPGC does NOT offer B.Tech or Bachelor of Technology. Engineering courses are not available at NPGC college."},
+            {"text": "NPGC does NOT offer MBBS or any medical degree program. Medical programs are not available at NPGC."},
+        ]
+        # Merge DB knowledge with hardcoded facts (facts appended last so they always exist)
+        self.knowledge_corpus = (knowledge or []) + _npgc_facts
 
     def detect_language(self, text):
         if re.search(r'[\u0900-\u097F]', text): return "hi"
@@ -66,7 +90,18 @@ class NLPEngine:
             if any(kw in cleaned_query for kw in keywords):
                 intent = i_name
                 break
-        
+
+        # Early-exit for clear off-topic queries — flag so main.py can refuse politely
+        if intent == "OFF_TOPIC":
+            return {
+                "intent": "OFF_TOPIC",
+                "context": "",
+                "recommendations": ["What courses does NPGC offer?", "NPGC Admission 2026", "BCA at NPGC"],
+                "detected_lang": self.detect_language(text),
+                "is_gibberish": False,
+                "is_off_topic": True
+            }
+
         # Labeled context gathering
         matches = {
             "courses": self.get_fuzzy_matches(cleaned_query, self.course_corpus, top_k=15),
