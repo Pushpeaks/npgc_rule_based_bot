@@ -98,6 +98,33 @@ async def chat(request: Request):
             "recommendations": result.get("recommendations", [])
         }
 
+    # B.Tech / MBBS denial guard — HARDCODED, never sent to LLM to prevent hallucination
+    if result.get("intent") == "BTECH_MBBS_DENIAL":
+        denial_msgs = {
+            "en": (
+                "❌ **B.Tech and MBBS are NOT offered at National PG College (NPGC), Lucknow.**\n\n"
+                "NPGC does not have an Engineering or Medical faculty. "
+                "You may want to explore courses that we DO offer, such as BCA, B.Sc, B.Com, BA, MA, and more. "
+                "For a full course list, feel free to ask! 😊"
+            ),
+            "hi": (
+                "❌ **National PG College (NPGC), Lucknow में B.Tech और MBBS उपलब्ध नहीं हैं।**\n\n"
+                "NPGC में Engineering या Medical की कोई faculty नहीं है। "
+                "हम BCA, B.Sc, B.Com, BA, MA जैसे कोर्स ऑफर करते हैं। "
+                "पूरी कोर्स लिस्ट के लिए पूछें! 😊"
+            ),
+            "hinglish": (
+                "❌ **NPGC (National PG College, Lucknow) mein B.Tech aur MBBS nahi hote hain.**\n\n"
+                "Yahan Engineering ya Medical courses available nahi hain. "
+                "Lekin hum BCA, B.Sc, B.Com, BA, MA jaisi bahut si degrees offer karte hain. "
+                "Poori course list ke liye poochho! 😊"
+            )
+        }
+        return {
+            "response": denial_msgs.get(lang, denial_msgs["en"]),
+            "recommendations": ["What courses does NPGC offer?", "BCA at NPGC", "NPGC Admission 2026"]
+        }
+
     context = result["context"]
     recommendations = result.get("recommendations", [])
 
