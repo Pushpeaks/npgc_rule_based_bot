@@ -1,7 +1,8 @@
 import os
+import hashlib
 import json
 from fastapi import FastAPI, Request
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from database import Database
@@ -23,6 +24,18 @@ app.add_middleware(
 )
 
 chat_history = {}
+SCRIPT_VERSION = "1"  # auto-computed on startup
+
+def compute_script_version():
+    """Compute MD5 hash of script.js for automatic cache-busting."""
+    global SCRIPT_VERSION
+    script_path = os.path.join("static", "script.js")
+    try:
+        with open(script_path, "rb") as f:
+            SCRIPT_VERSION = hashlib.md5(f.read()).hexdigest()[:8]
+        print(f"[Cache-Bust] script.js version: {SCRIPT_VERSION}")
+    except Exception as e:
+        print(f"[Cache-Bust] Warning: could not hash script.js — {e}")
 
 async def load_nlp_engine():
     global nlp
@@ -57,6 +70,7 @@ async def load_nlp_engine():
 
 @app.on_event("startup")
 async def startup():
+    compute_script_version()  # auto cache-bust on every deploy
     await load_nlp_engine()
 
 @app.get("/health")
@@ -269,8 +283,22 @@ async def chat(request: Request):
 async def suggestions():
     return {"suggestions": nlp.get_autosuggest_list() if nlp else []}
 
-# THE FINAL FIX: Mount everything from the 'static' folder to the root
-app.mount("/", StaticFiles(directory="static", html=True), name="static")
+# Serve index.html dynamically so script.js version is auto-injected
+@app.get("/", response_class=HTMLResponse, include_in_schema=False)
+async def serve_index():
+    html_path = os.path.join("static", "index.html")
+    with open(html_path, "r", encoding="utf-8") as f:
+        html = f.read()
+    # Inject current MD5-based version into script tag (strips any old ?v=...)
+    html = __import__('re').sub(
+        r'(<script src="script\.js)(?:\?v=[^"]*)?(">)',
+        rf'\g<1>?v={SCRIPT_VERSION}\2',
+        html
+    )
+    return HTMLResponse(content=html)
+
+# Mount static assets (CSS, JS, images) — route above takes priority for /
+app.mount("/", StaticFiles(directory="static"), name="static")
 
 if __name__ == "__main__":
     import uvicorn
