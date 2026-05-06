@@ -245,9 +245,22 @@ async function sendMessage(text = null) {
 }
 
 // 4. Voice Logic
+function stripMarkdown(text) {
+    if (!text) return '';
+    return text
+        .replace(/\*\*([^*]+)\*\*/g, '$1')  // **bold** → text
+        .replace(/\*([^*]+)\*/g, '$1')       // *italic* → text
+        .replace(/^#{1,6}\s+/gm, '')         // ### headers → text
+        .replace(/^\s*[\*\+\-]\s+/gm, '')   // bullet markers
+        .replace(/\*/g, '')                  // any remaining lone asterisks
+        .replace(/`([^`]*)`/g, '$1')         // `code` → text
+        .replace(/\n+/g, ' ')               // collapse newlines to spaces
+        .trim();
+}
+
 function speakText(text) {
     window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
+    const utterance = new SpeechSynthesisUtterance(stripMarkdown(text));
     utterance.lang = currentLang === 'hi' ? 'hi-IN' : 'en-IN';
     window.speechSynthesis.speak(utterance);
 }
