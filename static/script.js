@@ -248,13 +248,9 @@ async function sendMessage(text = null) {
 function stripMarkdown(text) {
     if (!text) return '';
     return text
-        .replace(/\*\*([^*]+)\*\*/g, '$1')  // **bold** → text
-        .replace(/\*([^*]+)\*/g, '$1')       // *italic* → text
-        .replace(/^#{1,6}\s+/gm, '')         // ### headers → text
-        .replace(/^\s*[\*\+\-]\s+/gm, '')   // bullet markers
-        .replace(/\*/g, '')                  // any remaining lone asterisks
-        .replace(/`([^`]*)`/g, '$1')         // `code` → text
-        .replace(/\n+/g, ' ')               // collapse newlines to spaces
+        .replace(/[*_#`~>]/g, '')   // strip ALL markdown symbols outright
+        .replace(/\s{2,}/g, ' ')    // collapse extra spaces
+        .replace(/\n+/g, ' ')       // newlines → space
         .trim();
 }
 
